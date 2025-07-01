@@ -6,7 +6,7 @@ fzf-git-worktree() {
   local CWD_NAME=${CWD:t}
 
   make_temp_dir() {
-    mktemp -d -t "git-worktree-init-$(date +%Y%m%d-%H%M%S)"
+    mktemp -d -t "fzf-git-worktree-$(date +%Y%m%d-%H%M%S)"
   }
 
   trim() {
@@ -38,6 +38,9 @@ HEREDOC
   prepare() {
     if ! cwd_is_git_repo && [[ -d "$CWD/main" ]]; then
       cd main || return 1
+      CWD=${PWD}
+      CWD_PARENT=${CWD:h}
+      CWD_NAME=${CWD:t}
     fi
     git worktree prune
   }
@@ -149,12 +152,28 @@ HEREDOC
       NAME=${SELECTION%% *}
     fi
 
-    local CURRENT_DIR=$(pwd)
-    if [[ "$NAME" == "$CURRENT_DIR" ]]; then
-      cd ..
+    # Get the branch name before removing the worktree
+    local WORKTREE_PATH
+    if [[ "$NAME" =~ ^/ ]]; then
+      # NAME is already a full path
+      WORKTREE_PATH="$NAME"
+    else
+      # NAME is relative, find the full path
+      WORKTREE_PATH=$(git worktree list | grep -E "/$NAME " | awk '{print $1}')
     fi
 
+    local BRANCH_NAME=$(git -C "$WORKTREE_PATH" branch --show-current 2>/dev/null)
+
+    # Always cd to the main worktree before removing
+    local MAIN_WORKTREE=$(git worktree list | head -1 | awk '{print $1}')
+    cd "$MAIN_WORKTREE"
+
     git worktree remove "$NAME"
+
+    # If worktree removal succeeded and we have a branch name, delete the branch
+    if [[ $? -eq 0 ]] && [[ -n "$BRANCH_NAME" ]]; then
+      git branch -D "$BRANCH_NAME"
+    fi
   }
 
   prepare

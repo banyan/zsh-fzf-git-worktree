@@ -1,6 +1,6 @@
 # zsh-fzf-git-worktree
 
-A Zsh plugin for managing Git worktrees with fzf integration.
+>A Zsh plugin for managing Git worktrees with fzf integration.
 
 ## Features
 
@@ -54,6 +54,28 @@ fzf-git-worktree help               # Print usage
 - Zsh
 - Git
 - fzf
+
+## Testing
+
+This project includes a comprehensive test suite. To run the tests:
+
+```bash
+# Run all tests
+./tests/run_tests.zsh
+
+# Run specific test suite
+./tests/run_tests.zsh -s unit    # Run only unit tests
+./tests/run_tests.zsh -s init    # Run only init command tests
+./tests/run_tests.zsh -s new     # Run only new command tests
+```
+
+### Test Structure
+
+- **Unit tests** - Test helper functions (trim, cwd_is_git_repo, make_temp_dir)
+- **Integration tests** - Test each subcommand (init, new, list, remove, branch)
+- **Test framework** - Simple assertion-based testing with colored output
+
+Tests run in isolated temporary directories to ensure safety and reproducibility.
 
 ## Acknowledgments
 

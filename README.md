@@ -2,10 +2,18 @@
 
 >A Zsh plugin for managing Git worktrees with fzf integration.
 
+![Demo](assets/demo.gif)
+
 ## Features
 
 - Interactive worktree management with fzf integration
 - Create, switch, remove worktrees and manage branches
+
+## Prerequisites
+
+- Zsh
+- Git
+- fzf
 
 ## Installation
 
@@ -49,12 +57,6 @@ fzf-git-worktree help               # Print usage
 3. Switch between worktrees with `fzf-git-worktree` (interactive)
 4. Switch branches within a worktree with `fzf-git-worktree branch`
 
-## Requirements
-
-- Zsh
-- Git
-- fzf
-
 ## Testing
 
 This project includes a comprehensive test suite. To run the tests:
@@ -62,24 +64,11 @@ This project includes a comprehensive test suite. To run the tests:
 ```bash
 # Run all tests
 ./tests/run_tests.zsh
-
-# Run specific test suite
-./tests/run_tests.zsh -s unit    # Run only unit tests
-./tests/run_tests.zsh -s init    # Run only init command tests
-./tests/run_tests.zsh -s new     # Run only new command tests
 ```
-
-### Test Structure
-
-- **Unit tests** - Test helper functions (trim, cwd_is_git_repo, make_temp_dir)
-- **Integration tests** - Test each subcommand (init, new, list, remove, branch)
-- **Test framework** - Simple assertion-based testing with colored output
-
-Tests run in isolated temporary directories to ensure safety and reproducibility.
 
 ## Acknowledgments
 
-This project was inspired by [3rd/work](https://github.com/3rd/work) and [this blog post](https://sushichan044.hateblo.jp/entry/2025/06/06/003325).
+This project was based on [3rd/work](https://github.com/3rd/work) and inspired by [this blog post](https://sushichan044.hateblo.jp/entry/2025/06/06/003325).
 
 ## License
 

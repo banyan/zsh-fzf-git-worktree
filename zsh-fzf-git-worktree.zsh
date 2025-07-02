@@ -97,12 +97,20 @@ HEREDOC
     local CURRENT_BRANCH=$(git branch --show-current)
     local NEW_DIR
 
-    if git worktree add "../$NAME" "$CURRENT_BRANCH" 2>/dev/null; then
-      NEW_DIR=${CWD_PARENT}/${NAME}
+    # Check if a branch with the given name exists
+    if git branch --list "$NAME" | grep -q .; then
+      # Branch exists, try to check it out
+      if git worktree add "../$NAME" "$NAME" 2>/dev/null; then
+        NEW_DIR=${CWD_PARENT}/${NAME}
+      else
+        # Branch is already checked out somewhere else
+        echo "Branch '$NAME' is already checked out"
+        return 1
+      fi
     else
-      local NEW_BRANCH="${NAME}/${CURRENT_BRANCH}"
-      echo "Branch '$CURRENT_BRANCH' is already checked out, creating new branch: $NEW_BRANCH"
-      git worktree add -b "$NEW_BRANCH" "../$NAME" "$CURRENT_BRANCH"
+      # Branch doesn't exist, create it
+      echo "Creating new branch: $NAME"
+      git worktree add -b "$NAME" "../$NAME" "$CURRENT_BRANCH"
       NEW_DIR=${CWD_PARENT}/${NAME}
     fi
 

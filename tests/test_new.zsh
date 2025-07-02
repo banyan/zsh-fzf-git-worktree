@@ -37,7 +37,7 @@ test_new_requires_name_argument() {
     assert_contains "$output" "you need to provide a tree name" "Should show appropriate error message"
 }
 
-test_new_creates_worktree_with_current_branch() {
+test_new_creates_worktree_with_new_branch_if_not_exists() {
     setup_worktree_repo
 
     # Create a new worktree
@@ -55,40 +55,38 @@ test_new_creates_worktree_with_current_branch() {
     local worktree_list=$(git worktree list)
     assert_contains "$worktree_list" "feature1" "Worktree list should contain new worktree"
 
-    # Check that we're on the same branch
-    local main_branch=$(git branch --show-current)
+    # Check that we're on a new branch named feature1
     cd ../feature1
     local feature_branch=$(git branch --show-current)
-    assert_equals "$main_branch" "$feature_branch" "Should be on same branch as main"
+    assert_equals "feature1" "$feature_branch" "Should be on new branch named feature1"
 }
 
-test_new_creates_new_branch_when_current_branch_already_checked_out() {
+test_new_creates_worktree_with_existing_branch() {
     setup_worktree_repo
 
-    # Get current branch name
-    local current_branch=$(git branch --show-current)
+    # Create a branch first
+    git checkout -b feature-existing
+    echo "feature" > feature.txt
+    git add feature.txt
+    git commit -m "Feature commit"
+    git checkout main
 
-    # Create first worktree
-    fzf-git-worktree new feature1
-
-    # Go back to main and try to create another worktree
-    cd ../main
-
-    # Capture output to check for branch creation message
-    local output=$(fzf-git-worktree new feature2 2>&1)
+    # Create worktree with existing branch name
+    fzf-git-worktree new feature-existing
     local exit_code=$?
 
-    assert_exit_code 0 $exit_code "new should succeed even when branch is checked out"
-    assert_contains "$output" "Branch '$current_branch' is already checked out" "Should show branch already checked out message"
-    assert_contains "$output" "creating new branch: feature2/$current_branch" "Should show new branch creation"
+    assert_exit_code 0 $exit_code "new should succeed with existing branch"
 
     # Verify we're in the new worktree
     local current_dir=$(basename "$PWD")
-    assert_equals "feature2" "$current_dir" "Should be in new worktree directory"
+    assert_equals "feature-existing" "$current_dir" "Should be in new worktree directory"
 
-    # Check that new branch was created
+    # Check that we're on the existing branch
     local new_branch=$(git branch --show-current)
-    assert_equals "feature2/$current_branch" "$new_branch" "Should be on new branch"
+    assert_equals "feature-existing" "$new_branch" "Should be on existing branch"
+
+    # Check that feature.txt exists (from the existing branch)
+    assert_file_exists "feature.txt" "File from existing branch should exist"
 }
 
 test_new_handles_paths_correctly() {
@@ -108,7 +106,7 @@ test_new_handles_paths_correctly() {
     assert_equals "$parent_path/feature1" "$current_path" "Should cd to new worktree"
 }
 
-test_new_with_different_branch() {
+test_new_creates_branch_based_on_current_branch() {
     setup_worktree_repo
 
     # Create a new branch first
@@ -120,11 +118,11 @@ test_new_with_different_branch() {
     # Create worktree while on develop branch
     fzf-git-worktree new feature1
 
-    # Check that we're on develop branch in new worktree
+    # Check that we're on new branch named feature1
     local branch=$(git branch --show-current)
-    assert_equals "develop" "$branch" "Should be on develop branch in new worktree"
+    assert_equals "feature1" "$branch" "Should be on new branch named feature1"
 
-    # Check that develop.txt exists
+    # Check that develop.txt exists (branch created from develop)
     assert_file_exists "develop.txt" "File from develop branch should exist"
 }
 
@@ -163,6 +161,23 @@ test_new_handles_special_characters_in_name() {
     # Test with underscores
     fzf-git-worktree new feature_with_underscores
     assert_equals "feature_with_underscores" "$(basename "$PWD")" "Should handle underscores in name"
+}
+
+test_new_fails_when_branch_already_checked_out() {
+    setup_worktree_repo
+
+    # Create a branch and check it out in a worktree
+    git checkout -b feature-branch
+    git checkout main
+    fzf-git-worktree new feature-branch
+
+    # Go back to main and try to create another worktree with same branch
+    cd ../main
+    local output=$(fzf-git-worktree new feature-branch 2>&1)
+    local exit_code=$?
+
+    assert_exit_code 1 $exit_code "new should fail when branch is already checked out"
+    assert_contains "$output" "Branch 'feature-branch' is already checked out" "Should show appropriate error message"
 }
 
 test_new_preserves_uncommitted_changes_in_main() {

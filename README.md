@@ -41,7 +41,7 @@ After installation, the `fzf-git-worktree` command will be available:
 ```bash
 fzf-git-worktree                    # Interactive worktree switcher
 fzf-git-worktree i, init            # Setup "fzf-git-worktree" in current directory
-fzf-git-worktree new <name>         # Create new worktree and switch to it
+fzf-git-worktree new <name>         # Create new worktree with branch <name> if it doesn't exist
 fzf-git-worktree rm, remove <name>  # Remove worktree
 fzf-git-worktree ls, list           # List worktrees
 fzf-git-worktree b, branch [name]   # Switch current worktree to branch

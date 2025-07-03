@@ -28,9 +28,8 @@ Usage:
   work new <n>            create new work tree and switch to it
   work rm, remove <n>     remove work tree
   work ls, list           list work trees
-  work b, branch [name]   switch current work tree to branch
-                          if [name] is provided, switch to branch or create it
-                          if [name] is not provided, select branch interactively
+  work s, switch          switch to existing work tree interactively
+  work s -c <name>        create new branch and work tree with <name>
   work help               print usage
 HEREDOC
   }
@@ -121,19 +120,39 @@ HEREDOC
     cd "$NEW_DIR"
   }
 
-  handle_branch() {
-    local BRANCH=$2
-    if [[ -z "$BRANCH" ]]; then
-      BRANCH=$(trim "$(git branch --all --sort=-committerdate | grep -v "^\*" | sed "s/remotes\/origin\///g" | awk '!x[$0]++' | grep -v HEAD | fzf)")
-      if [[ -z "$BRANCH" ]]; then
-        return 0
+  handle_switch_command() {
+    shift  # Remove 'switch' from arguments
+    
+    # Check for -c option
+    if [[ "$1" == "-c" ]]; then
+      local NAME=$2
+      if [[ -z "$NAME" ]]; then
+        echo "FATAL: you need to provide a branch/worktree name"
+        usage
+        return 1
       fi
-    fi
-
-    if git branch --list "$BRANCH" | grep -q .; then
-      git checkout --ignore-other-worktrees "$BRANCH"
+      
+      # Check if branch already exists
+      if git branch --list "$NAME" | grep -q .; then
+        echo "Branch '$NAME' already exists"
+        return 1
+      fi
+      
+      # Create new branch and worktree
+      local CURRENT_BRANCH=$(git branch --show-current)
+      git worktree add -b "$NAME" "../$NAME" "$CURRENT_BRANCH"
+      if [[ $? -eq 0 ]]; then
+        local NEW_DIR=${CWD_PARENT}/${NAME}
+        
+        if [[ -f "$CWD_PARENT/hook.sh" ]]; then
+          bash "$CWD_PARENT/hook.sh" "$NEW_DIR"
+        fi
+        
+        cd "$NEW_DIR"
+      fi
     else
-      git checkout --ignore-other-worktrees -b "$BRANCH"
+      # No -c option, switch to existing worktree
+      handle_switch
     fi
   }
 
@@ -200,8 +219,8 @@ HEREDOC
     new)
       handle_new "$@"
       ;;
-    b|branch)
-      handle_branch "$@"
+    s|switch)
+      handle_switch_command "$@"
       ;;
     rm|remove)
       handle_remove "$@"

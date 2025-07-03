@@ -44,9 +44,8 @@ fzf-git-worktree i, init            # Setup "fzf-git-worktree" in current direct
 fzf-git-worktree new <name>         # Create new worktree with branch <name> if it doesn't exist
 fzf-git-worktree rm, remove <name>  # Remove worktree
 fzf-git-worktree ls, list           # List worktrees
-fzf-git-worktree b, branch [name]   # Switch current worktree to branch
-                                    # If [name] is provided, switch to branch or create it
-                                    # If [name] is not provided, select branch interactively
+fzf-git-worktree s, switch          # Switch to existing worktree interactively
+fzf-git-worktree s -c <name>        # Create new branch and worktree with <name>
 fzf-git-worktree help               # Print usage
 ```
 
@@ -55,7 +54,7 @@ fzf-git-worktree help               # Print usage
 1. In your Git repository, run `fzf-git-worktree init` to set up the worktree structure
 2. Use `fzf-git-worktree new feature-x` to create a new worktree for your feature
 3. Switch between worktrees with `fzf-git-worktree` (interactive)
-4. Switch branches within a worktree with `fzf-git-worktree branch`
+4. Create new branch with worktree using `fzf-git-worktree switch -c feature-y`
 
 ## Testing
 

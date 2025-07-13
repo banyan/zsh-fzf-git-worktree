@@ -28,8 +28,6 @@ Usage:
   work new <n>            create new work tree and switch to it
   work rm, remove <n>     remove work tree
   work ls, list           list work trees
-  work s, switch          switch to existing work tree interactively
-  work s -c <name>        create new branch and work tree with <name>
   work help               print usage
 HEREDOC
   }
@@ -120,41 +118,6 @@ HEREDOC
     cd "$NEW_DIR"
   }
 
-  handle_switch_command() {
-    shift  # Remove 'switch' from arguments
-    
-    # Check for -c option
-    if [[ "$1" == "-c" ]]; then
-      local NAME=$2
-      if [[ -z "$NAME" ]]; then
-        echo "FATAL: you need to provide a branch/worktree name"
-        usage
-        return 1
-      fi
-      
-      # Check if branch already exists
-      if git branch --list "$NAME" | grep -q .; then
-        echo "Branch '$NAME' already exists"
-        return 1
-      fi
-      
-      # Create new branch and worktree
-      local CURRENT_BRANCH=$(git branch --show-current)
-      git worktree add -b "$NAME" "../$NAME" "$CURRENT_BRANCH"
-      if [[ $? -eq 0 ]]; then
-        local NEW_DIR=${CWD_PARENT}/${NAME}
-        
-        if [[ -f "$CWD_PARENT/hook.sh" ]]; then
-          bash "$CWD_PARENT/hook.sh" "$NEW_DIR"
-        fi
-        
-        cd "$NEW_DIR"
-      fi
-    else
-      # No -c option, switch to existing worktree
-      handle_switch
-    fi
-  }
 
   handle_remove() {
     local NAME=$2
@@ -218,9 +181,6 @@ HEREDOC
       ;;
     new)
       handle_new "$@"
-      ;;
-    s|switch)
-      handle_switch_command "$@"
       ;;
     rm|remove)
       handle_remove "$@"

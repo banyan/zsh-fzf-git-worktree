@@ -65,7 +65,7 @@ test_remove_with_path_argument() {
 test_remove_switches_directory_when_removing_current() {
     setup_worktree_repo
 
-    # Create a worktree and switch to it
+    # Create a worktree and cd to it
     git worktree add ../feature1
     cd ../feature1
 

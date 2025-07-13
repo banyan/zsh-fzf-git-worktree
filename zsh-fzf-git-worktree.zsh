@@ -23,12 +23,12 @@ fzf-git-worktree() {
   usage() {
     cat <<HEREDOC
 Usage:
-  work                    interactive switcher
-  work i, init            setup "work" in cwd
-  work new <n>            create new work tree and switch to it
-  work rm, remove <n>     remove work tree
-  work ls, list           list work trees
-  work help               print usage
+  fzf-git-worktree                    interactive switcher
+  fzf-git-worktree i, init            setup "fzf-git-worktree" in cwd
+  fzf-git-worktree new <n>            create new work tree and switch to it
+  fzf-git-worktree rm, remove <n>     remove work tree
+  fzf-git-worktree ls, list           list work trees
+  fzf-git-worktree help               print usage
 HEREDOC
   }
 

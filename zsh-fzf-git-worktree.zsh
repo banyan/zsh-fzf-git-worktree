@@ -87,9 +87,12 @@ HEREDOC
   handle_new() {
     local NAME=$2
     if [[ -z "$NAME" ]]; then
-      echo "FATAL: you need to provide a tree name"
-      usage
-      return 1
+      echo -n "Enter new worktree name: "
+      read NAME
+      if [[ -z "$NAME" ]]; then
+        echo "FATAL: worktree name cannot be empty"
+        return 1
+      fi
     fi
     local CURRENT_BRANCH=$(git branch --show-current)
     local NEW_DIR

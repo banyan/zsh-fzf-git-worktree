@@ -94,9 +94,9 @@ HEREDOC
     local CURRENT_BRANCH=$(git branch --show-current)
     local NEW_DIR
 
-    # Check if a branch with the given name exists
+    # Check if a branch with the given name exists locally
     if git branch --list "$NAME" | grep -q .; then
-      # Branch exists, try to check it out
+      # Local branch exists, try to check it out
       if git worktree add "../$NAME" "$NAME" 2>/dev/null; then
         NEW_DIR=${CWD_PARENT}/${NAME}
       else
@@ -105,10 +105,26 @@ HEREDOC
         return 1
       fi
     else
-      # Branch doesn't exist, create it
-      echo "Creating new branch: $NAME"
-      git worktree add -b "$NAME" "../$NAME" "$CURRENT_BRANCH"
-      NEW_DIR=${CWD_PARENT}/${NAME}
+      # Check if branch exists on remote
+      local REMOTE_BRANCH=$(git branch -r | grep -E "origin/${NAME}$" | head -1)
+      # Trim whitespace using parameter expansion
+      REMOTE_BRANCH="${REMOTE_BRANCH#"${REMOTE_BRANCH%%[![:space:]]*}"}"
+      REMOTE_BRANCH="${REMOTE_BRANCH%"${REMOTE_BRANCH##*[![:space:]]}"}"
+      if [[ -n "$REMOTE_BRANCH" ]]; then
+        # Remote branch exists, create worktree from it
+        echo "Creating worktree from remote branch: $REMOTE_BRANCH"
+        if git worktree add "../$NAME" "$REMOTE_BRANCH" 2>/dev/null; then
+          NEW_DIR=${CWD_PARENT}/${NAME}
+        else
+          echo "Failed to create worktree from remote branch"
+          return 1
+        fi
+      else
+        # Branch doesn't exist anywhere, create it
+        echo "Creating new branch: $NAME"
+        git worktree add -b "$NAME" "../$NAME" "$CURRENT_BRANCH"
+        NEW_DIR=${CWD_PARENT}/${NAME}
+      fi
     fi
 
     if [[ -f "$CWD_PARENT/hook.sh" ]]; then

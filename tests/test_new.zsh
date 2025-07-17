@@ -198,6 +198,54 @@ test_new_preserves_uncommitted_changes_in_main() {
     assert_file_exists "uncommitted.txt" "Uncommitted file should still exist in main"
 }
 
+test_new_creates_worktree_from_remote_branch() {
+    setup_worktree_repo
+
+    # Create a "remote" repository in TEST_DIR
+    local current_dir=$(pwd)
+    cd "$TEST_DIR"
+    mkdir remote_repo
+    cd remote_repo
+    git init --bare
+    cd "$current_dir"
+
+    # Add the remote
+    git remote add origin "$TEST_DIR/remote_repo"
+
+    # Push main to remote
+    git push -u origin main
+
+    # Create a branch on the "remote" by creating it locally, pushing it, then deleting local
+    git checkout -b remote-feature
+    echo "remote content" > remote-file.txt
+    git add remote-file.txt
+    git commit -m "Remote feature commit"
+    git push -u origin remote-feature
+    git checkout main
+    git branch -D remote-feature
+
+    # Fetch to ensure we have the remote branch
+    git fetch
+
+    # Create worktree with remote branch name
+    fzf-git-worktree new remote-feature
+
+    # Verify we're in the new worktree
+    local current_dir=$(basename "$PWD")
+    assert_equals "remote-feature" "$current_dir" "Should be in new worktree directory"
+
+    # Check that we're on the branch from remote
+    local branch=$(git branch --show-current)
+    assert_equals "remote-feature" "$branch" "Should be on remote-feature branch"
+
+    # Check that the file from remote branch exists
+    assert_file_exists "remote-file.txt" "File from remote branch should exist"
+
+    # Verify the content is from the remote branch
+    local content=$(cat remote-file.txt)
+    assert_equals "remote content" "$content" "Content should match remote branch"
+}
+
 # Run all tests
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     run_test_suite "New Command Tests"

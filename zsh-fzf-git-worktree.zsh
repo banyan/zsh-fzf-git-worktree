@@ -115,6 +115,7 @@ HEREDOC
         echo "Creating worktree from remote branch: $REMOTE_BRANCH"
         if git worktree add "../$NAME" "$REMOTE_BRANCH" 2>/dev/null; then
           NEW_DIR=${CWD_PARENT}/${NAME}
+          git -C "$NEW_DIR" switch "$NAME"
         else
           echo "Failed to create worktree from remote branch"
           return 1

@@ -282,6 +282,142 @@ test_remove_always_uses_main_worktree() {
     assert_dir_exists "$(dirname $main_path)/feature2" "feature2 should still exist"
 }
 
+test_remove_force_flag_with_uncommitted_changes() {
+    setup_worktree_repo
+
+    # Create a worktree
+    git worktree add ../feature1
+    cd ../feature1
+
+    # Make uncommitted changes
+    echo "modified" >> test.txt
+    git add test.txt
+
+    cd ../main
+
+    # Try to remove with force flag
+    fzf-git-worktree remove -f feature1
+    local exit_code=$?
+
+    # Should succeed with force flag
+    assert_exit_code 0 $exit_code "Should succeed with -f flag"
+    assert_dir_not_exists "../feature1" "Worktree should be removed with force"
+}
+
+test_remove_force_flag_with_locked_worktree() {
+    setup_worktree_repo
+
+    # Create and lock a worktree
+    git worktree add ../feature1
+    git worktree lock ../feature1
+
+    # Try to remove with force flag
+    fzf-git-worktree remove --force feature1
+    local exit_code=$?
+
+    # Should succeed with force flag
+    assert_exit_code 0 $exit_code "Should succeed with --force flag on locked worktree"
+    assert_dir_not_exists "../feature1" "Locked worktree should be removed with force"
+}
+
+test_remove_all_flag() {
+    setup_worktree_repo
+
+    # Create multiple worktrees
+    git worktree add ../feature1
+    git worktree add ../feature2
+    git worktree add ../feature3
+
+    # Verify they exist
+    assert_dir_exists "../feature1" "feature1 should exist"
+    assert_dir_exists "../feature2" "feature2 should exist"
+    assert_dir_exists "../feature3" "feature3 should exist"
+
+    # Remove all worktrees
+    fzf-git-worktree remove --all
+    local exit_code=$?
+
+    # Should succeed
+    assert_exit_code 0 $exit_code "remove --all should succeed"
+
+    # All worktrees should be removed
+    assert_dir_not_exists "../feature1" "feature1 should be removed"
+    assert_dir_not_exists "../feature2" "feature2 should be removed"
+    assert_dir_not_exists "../feature3" "feature3 should be removed"
+
+    # Only main should remain
+    local worktree_count=$(git worktree list | wc -l | tr -d ' ')
+    assert_equals "1" "$worktree_count" "Only main worktree should remain"
+}
+
+test_remove_all_with_force_flag() {
+    setup_worktree_repo
+
+    # Create worktrees with uncommitted changes
+    git worktree add ../feature1
+    cd ../feature1
+    echo "modified" >> test.txt
+
+    cd ../main
+    git worktree add ../feature2
+    cd ../feature2
+    echo "new file" > new.txt
+    git add new.txt
+
+    cd ../main
+
+    # Remove all with force
+    fzf-git-worktree remove --all --force
+    local exit_code=$?
+
+    # Should succeed
+    assert_exit_code 0 $exit_code "remove --all --force should succeed"
+
+    # All worktrees should be removed despite uncommitted changes
+    assert_dir_not_exists "../feature1" "feature1 should be removed"
+    assert_dir_not_exists "../feature2" "feature2 should be removed"
+}
+
+test_remove_all_when_no_additional_worktrees() {
+    setup_worktree_repo
+
+    # Run remove --all when only main exists
+    local output=$(fzf-git-worktree remove --all 2>&1)
+    local exit_code=$?
+
+    # Should succeed with message
+    assert_exit_code 0 $exit_code "remove --all should succeed even with no worktrees"
+    assert_contains "$output" "No worktrees to remove" "Should show appropriate message"
+}
+
+test_remove_all_deletes_branches() {
+    setup_worktree_repo
+
+    # Create worktrees with branches
+    git worktree add -b branch1 ../feature1
+    git worktree add -b branch2 ../feature2
+    git worktree add -b branch3 ../feature3
+
+    # Verify branches exist
+    git branch --list | grep -q "branch1"
+    assert_exit_code 0 $? "branch1 should exist"
+    git branch --list | grep -q "branch2"
+    assert_exit_code 0 $? "branch2 should exist"
+    git branch --list | grep -q "branch3"
+    assert_exit_code 0 $? "branch3 should exist"
+
+    # Remove all worktrees
+    fzf-git-worktree remove --all
+
+    # Verify branches are deleted
+    git branch --list | grep -q "branch1"
+    assert_exit_code 1 $? "branch1 should be deleted"
+    git branch --list | grep -q "branch2"
+    assert_exit_code 1 $? "branch2 should be deleted"
+    git branch --list | grep -q "branch3"
+    assert_exit_code 1 $? "branch3 should be deleted"
+}
+
 # Run all tests
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     run_test_suite "Remove Command Tests"

@@ -39,12 +39,15 @@ zinit light banyan/zsh-fzf-git-worktree
 After installation, the `fzf-git-worktree` command will be available:
 
 ```bash
-fzf-git-worktree                    # Interactive worktree switcher
-fzf-git-worktree i, init            # Setup "fzf-git-worktree" in current directory
-fzf-git-worktree new <name>         # Create new worktree with branch <name> if it doesn't exist
-fzf-git-worktree rm, remove <name>  # Remove worktree
-fzf-git-worktree ls, list           # List worktrees
-fzf-git-worktree help               # Print usage
+fzf-git-worktree                              # Interactive worktree switcher
+fzf-git-worktree i, init                      # Setup "fzf-git-worktree" in current directory
+fzf-git-worktree new <name>                   # Create new worktree with branch <name> if it doesn't exist
+fzf-git-worktree rm, remove <name>            # Remove worktree
+fzf-git-worktree rm, remove -f, --force <name> # Force remove worktree (even with uncommitted changes)
+fzf-git-worktree rm, remove --all             # Remove all worktrees except main
+fzf-git-worktree rm, remove --all --force     # Force remove all worktrees except main
+fzf-git-worktree ls, list                     # List worktrees
+fzf-git-worktree help                         # Print usage
 ```
 
 ### Getting Started

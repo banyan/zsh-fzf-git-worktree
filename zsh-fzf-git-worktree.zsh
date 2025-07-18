@@ -140,7 +140,60 @@ HEREDOC
 
 
   handle_remove() {
-    local NAME=$2
+    local FORCE=""
+    local ALL=false
+    local NAME=""
+
+    # Parse arguments
+    shift # Remove the 'rm' or 'remove' command
+    while [[ $# -gt 0 ]]; do
+      case $1 in
+        -f|--force)
+          FORCE="-f"
+          shift
+          ;;
+        --all)
+          ALL=true
+          shift
+          ;;
+        *)
+          NAME=$1
+          shift
+          ;;
+      esac
+    done
+
+    # Handle --all flag
+    if [[ "$ALL" == true ]]; then
+      # Get main worktree path
+      local MAIN_WORKTREE=$(git worktree list | head -1 | awk '{print $1}')
+      cd "$MAIN_WORKTREE"
+
+      # Get all worktrees except main
+      local WORKTREES=$(git worktree list | tail -n +2)
+      if [[ -z "$WORKTREES" ]]; then
+        echo "No worktrees to remove (only main exists)"
+        return 0
+      fi
+
+      echo "Removing all worktrees except main..."
+      while IFS= read -r line; do
+        local WORKTREE_PATH=$(echo "$line" | awk '{print $1}')
+        local WORKTREE_NAME=$(basename "$WORKTREE_PATH")
+        local BRANCH_NAME=$(echo "$line" | awk '{print $3}' | tr -d '[]')
+
+        echo "Removing worktree: $WORKTREE_NAME"
+        git worktree remove $FORCE "$WORKTREE_PATH"
+
+        # If worktree removal succeeded and we have a branch name, delete the branch
+        if [[ $? -eq 0 ]] && [[ -n "$BRANCH_NAME" ]]; then
+          git branch -D "$BRANCH_NAME" 2>/dev/null
+        fi
+      done <<< "$WORKTREES"
+      return 0
+    fi
+
+    # Handle single worktree removal
     if [[ -z "$NAME" ]]; then
       local SELECTION=$(git worktree list | \
           sed -E 's/^(.*\/([^[:space:]]* ))/\1 \2/g' | \
@@ -178,7 +231,7 @@ HEREDOC
     local MAIN_WORKTREE=$(git worktree list | head -1 | awk '{print $1}')
     cd "$MAIN_WORKTREE"
 
-    git worktree remove "$NAME"
+    git worktree remove $FORCE "$NAME"
 
     # If worktree removal succeeded and we have a branch name, delete the branch
     if [[ $? -eq 0 ]] && [[ -n "$BRANCH_NAME" ]]; then
